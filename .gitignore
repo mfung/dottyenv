@@ -1,4 +1,5 @@
 /target
+/dist
 
 # Never commit real env files. This is the whole point of the tool.
 .env

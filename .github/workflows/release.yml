@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  # Lets the build matrix be exercised without publishing anything.
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64-apple-darwin, x86_64-apple-darwin]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Package
+        run: .github/package.sh "${{ matrix.target }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist/*
+
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      # zigbuild pins the glibc floor. Building natively on ubuntu-latest would
+      # link against its glibc and refuse to start on RHEL 8 (2.28).
+      - uses: mlugg/setup-zig@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-zigbuild
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - run: cargo zigbuild --release --locked --target ${{ matrix.target }}.2.28
+
+      - name: Verify the glibc floor
+        run: |
+          bin="target/${{ matrix.target }}/release/dottyenv"
+          floor=$(readelf -W --dyn-syms "$bin" \
+                  | grep -o 'GLIBC_[0-9]\+\.[0-9]\+' | sort -uV | tail -1)
+          echo "highest glibc symbol required: ${floor:-none}"
+          highest=${floor#GLIBC_}
+          # sort -V puts the larger version last; if that is not 2.28 the binary
+          # needs something newer than RHEL 8 provides.
+          if [ -n "$highest" ] && [ "$(printf '%s\n2.28\n' "$highest" | sort -V | tail -1)" != "2.28" ]; then
+            echo "::error::binary requires glibc $highest, above the 2.28 floor"
+            exit 1
+          fi
+
+      - name: Package
+        run: .github/package.sh "${{ matrix.target }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist/*
+
+  release:
+    needs: [macos, linux]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: dist-*
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum *.tar.gz > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            dist/*.tar.gz dist/SHA256SUMS
