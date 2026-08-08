@@ -15,7 +15,7 @@ $ dottyenv check
             PostgreSQL connection string
 
   INVALID   LOG_LEVEL
-            expected one of debug, info, warn, error, got "verbose"
+            expected one of [debug, info, warn, error], got "verbose"
 
   MISSING   STRIPE_SECRET_KEY
             Stripe secret key. Use sk_test_ locally.

@@ -8,7 +8,14 @@
 #      good: "^sk_(test|live)_"
 #      bad:  "^sk_(test|live)_[A-Za-z0-9]{24}$"
 #   2. A false INVALID on a working key destroys trust. When unsure, omit the entry.
-#   3. Verify every prefix against vendor docs before shipping. These are unverified.
+#   3. Verify every prefix against vendor docs before shipping.
+#
+# Verified 2026-08-07:
+#   Stripe  sk_/rk_ + test_/live_   https://docs.stripe.com/api/authentication
+#           (pk_ is publishable, not secret; whsec_ webhook secrets not covered yet)
+#   GitHub  ghp_ gho_ ghu_ ghs_ ghr_, github_pat_
+#           https://github.blog/changelog/2021-03-31-authentication-token-format-updates-are-generally-available/
+# The remaining entries are standard URI schemes, not vendor-issued formats.
 #
 # `prefixes` matches against an observed VALUE. `name_matches` is the fallback for
 # when only a placeholder is present (the common case with .env.example).

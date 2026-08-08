@@ -1,0 +1,16 @@
+---
+source: tests/cli.rs
+expression: stdout
+---
+✗ 3 problems in .env
+
+  INVALID   DATABASE_URL
+            expected ^postgres(ql)?://, got "<redacted, 37 chars>"
+            PostgreSQL connection string
+
+  INVALID   LOG_LEVEL
+            expected one of [debug, info, warn, error], got "verbose"
+
+  MISSING   PORT
+
+  0 of 2 required variables OK

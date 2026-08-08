@@ -98,7 +98,9 @@ fn validate_value(spec: &VarSpec, value: &str) -> Option<String> {
 
     if let Some(allowed) = &spec.one_of {
         if !allowed.iter().any(|a| a == value) {
-            return Some(format!("expected one of {}", allowed.join(", ")));
+            // Bracket the list so the trailing ", got ..." cannot be misread as
+            // another member of it.
+            return Some(format!("expected one of [{}]", allowed.join(", ")));
         }
     }
 
@@ -223,6 +225,19 @@ mod tests {
         let schema = schema_from("[vars.LOG]\none_of = [\"debug\", \"info\"]");
         let report = check(&schema, &env_from(&[("LOG", "verbose")]));
         assert_eq!(report.findings.len(), 1);
+    }
+
+    /// The rendered line appends ", got ...", so the allowed set must be
+    /// delimited or `info` and `got` read as one comma-separated list.
+    #[test]
+    fn one_of_message_delimits_the_allowed_set() {
+        let schema = schema_from("[vars.LOG]\none_of = [\"debug\", \"info\"]");
+        let report = check(&schema, &env_from(&[("LOG", "verbose")]));
+        let rendered = render(&report, ".env");
+        assert!(
+            rendered.contains("expected one of [debug, info], got \"verbose\""),
+            "{rendered}"
+        );
     }
 
     #[test]
