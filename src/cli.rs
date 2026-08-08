@@ -27,7 +27,11 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Generate a schema from an existing .env file
-    Init,
+    Init {
+        /// Overwrite an existing schema file
+        #[arg(long)]
+        force: bool,
+    },
 
     /// Validate the env file against the schema
     Check,

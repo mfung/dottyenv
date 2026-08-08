@@ -1,10 +1,13 @@
+pub mod catalog;
 pub mod check;
 pub mod cli;
 pub mod envfile;
+pub mod init;
 pub mod schema;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use cli::{Cli, Command};
+use std::path::{Path, PathBuf};
 
 /// Distinguishes "the tool ran and found problems" (exit 1) from "the tool could
 /// not run" (exit 3). See PRD §6.
@@ -17,9 +20,57 @@ pub fn run(cli: Cli) -> Result<Outcome> {
     match cli.command {
         Command::Check => cmd_check(&cli),
         Command::List => cmd_list(&cli),
-        Command::Init => bail!("`init` is not implemented yet — see PRD §9, v0.1"),
+        Command::Init { force } => cmd_init(&cli, force),
         Command::Scan => bail!("`scan` is not implemented yet — see PRD §9, v0.2"),
     }
+}
+
+fn cmd_init(cli: &Cli, force: bool) -> Result<Outcome> {
+    let source = resolve_source(&cli.file)?;
+
+    if cli.schema.exists() && !force {
+        bail!(
+            "{} already exists; pass --force to overwrite",
+            cli.schema.display()
+        );
+    }
+
+    let vars = envfile::load(&source)?;
+    if vars.is_empty() {
+        bail!("no variables found in {}", source.display());
+    }
+
+    let catalog = catalog::Catalog::load()?;
+    let generated = init::generate(&vars, &catalog);
+
+    std::fs::write(&cli.schema, &generated)
+        .with_context(|| format!("could not write {}", cli.schema.display()))?;
+
+    if !cli.quiet {
+        anstream::eprintln!(
+            "wrote {} — {} variables from {}\nreview it, then run `dottyenv check`",
+            cli.schema.display(),
+            vars.len(),
+            source.display()
+        );
+    }
+
+    Ok(Outcome::Success)
+}
+
+/// Fall back to .env.example only when the user did not name a file explicitly —
+/// a repo often has the example committed but no .env yet.
+fn resolve_source(file: &Path) -> Result<PathBuf> {
+    if file.exists() {
+        return Ok(file.to_path_buf());
+    }
+
+    let example = Path::new(".env.example");
+    if file == Path::new(".env") && example.exists() {
+        return Ok(example.to_path_buf());
+    }
+
+    bail!("no env file found at {}", file.display())
 }
 
 fn cmd_check(cli: &Cli) -> Result<Outcome> {

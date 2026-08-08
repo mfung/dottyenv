@@ -22,7 +22,21 @@ $ dottyenv check
 
 ## Status
 
-Early. `check` and `list` work; `init` and `scan` are not implemented yet.
+Early. `init`, `check`, and `list` work; `scan` is not implemented yet.
+
+## Getting started
+
+Point `init` at an existing `.env` (or `.env.example`) and it writes a schema,
+filling in patterns and source URLs for providers it recognises:
+
+```bash
+dottyenv init      # writes dottyenv.toml
+dottyenv check     # validate .env against it
+```
+
+Review the generated file before committing it. Anything `init` could not infer is
+left as a `# TODO` comment rather than guessed at — a wrong pattern is worse than
+no pattern.
 
 ## Schema
 

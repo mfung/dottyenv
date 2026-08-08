@@ -1,8 +1,7 @@
 # Provider catalog — see PRD §7.
 #
 # Used by `dottyenv init` to infer `pattern` and `source` for known providers.
-# NOT yet loaded by any code: `init` is unimplemented, and wiring a loader before
-# there is a consumer would be speculative.
+# Compiled into the binary via include_str!, so there are no network calls.
 #
 # RULES FOR ENTRIES (PRD §7.4):
 #   1. Match the PREFIX, never the full format. Vendors change key lengths.
@@ -16,16 +15,40 @@
 
 catalog_version = 1
 
+# NOTE: DATABASE_URL is deliberately absent from every `name_matches` below.
+# The name does not pin a format — it may hold postgres://, mysql://, mongodb://,
+# sqlite:///path, Prisma's file:./dev.db, or a bare filesystem path. Guessing from
+# the name alone produced a schema that rejected the .env it was generated from.
+# Databases are identified by observed value only.
+
 [[providers]]
-id = "postgres_url"
 name = "PostgreSQL connection string"
 prefixes = ["postgres://", "postgresql://"]
-name_matches = ["DATABASE_URL", "*_DATABASE_URL", "POSTGRES_URL"]
-pattern = "^postgres(ql)?://"
+name_matches = ["POSTGRES_URL", "POSTGRESQL_URL"]
+pattern = '^postgres(ql)?://'
 secret = true
 
 [[providers]]
-id = "stripe_secret_key"
+name = "MySQL/MariaDB connection string"
+prefixes = ["mysql://", "mysql2://", "mariadb://"]
+name_matches = ["MYSQL_URL"]
+pattern = '^(mysql2?|mariadb)://'
+secret = true
+
+[[providers]]
+name = "MongoDB connection string"
+prefixes = ["mongodb://", "mongodb+srv://"]
+name_matches = ["MONGODB_URI", "MONGO_URL"]
+pattern = '^mongodb(\+srv)?://'
+secret = true
+
+[[providers]]
+name = "SQLite database path"
+prefixes = ["sqlite://", "sqlite3://", "file:"]
+pattern = '^(sqlite3?://|file:)'
+secret = false
+
+[[providers]]
 name = "Stripe secret key"
 prefixes = ["sk_test_", "sk_live_", "rk_test_", "rk_live_"]
 name_matches = ["STRIPE_SECRET_KEY", "STRIPE_API_KEY"]
@@ -34,7 +57,6 @@ source = "https://dashboard.stripe.com/apikeys"
 secret = true
 
 [[providers]]
-id = "github_token"
 name = "GitHub token"
 prefixes = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"]
 name_matches = ["GITHUB_TOKEN", "GH_TOKEN"]
@@ -43,7 +65,6 @@ source = "https://github.com/settings/tokens"
 secret = true
 
 [[providers]]
-id = "redis_url"
 name = "Redis connection string"
 prefixes = ["redis://", "rediss://"]
 name_matches = ["REDIS_URL"]
