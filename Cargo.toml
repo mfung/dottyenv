@@ -5,6 +5,8 @@ edition = "2021"
 description = "Validate .env files against a declared schema"
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/mfung/dottyenv"
+repository = "https://github.com/mfung/dottyenv"
 
 [lib]
 name = "dottyenv"
@@ -30,3 +32,35 @@ insta = "1"
 predicates = "3"
 serde_json = "1"
 tempfile = "3"
+
+# Native Linux packages. Both tools rewrite `target/release/` to
+# `target/<triple>/release/` when passed --target, so these paths are correct for
+# cross-built binaries too.
+
+[package.metadata.deb]
+maintainer = "Meng Fung <meng.fung@gmail.com>"
+copyright = "2026 Meng Fung"
+license-file = ["LICENSE", "0"]
+section = "utils"
+priority = "optional"
+# No `depends`: the binary links nothing beyond libc, and the glibc 2.28 floor is
+# enforced at build time rather than declared here.
+depends = ""
+extended-description = """\
+dottyenv validates .env files against a schema committed to the repository, \
+reporting which variables are missing or malformed and where to obtain them. \
+It does not encrypt, sync, or store secrets."""
+assets = [
+    ["target/release/dottyenv", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/dottyenv/README.md", "644"],
+]
+
+[package.metadata.generate-rpm]
+# Dependency autodetection shells out to rpm's find-requires, which is absent on
+# the runner and would inspect the host architecture rather than the target.
+auto-req = "disabled"
+assets = [
+    { source = "target/release/dottyenv", dest = "/usr/bin/dottyenv", mode = "755" },
+    { source = "README.md", dest = "/usr/share/doc/dottyenv/README.md", mode = "644", doc = true },
+    { source = "LICENSE", dest = "/usr/share/doc/dottyenv/LICENSE", mode = "644", doc = true },
+]

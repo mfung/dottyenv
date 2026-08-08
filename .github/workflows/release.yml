@@ -68,8 +68,32 @@ jobs:
             exit 1
           fi
 
-      - name: Package
+      - name: Package tarball
         run: .github/package.sh "${{ matrix.target }}"
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deb,cargo-generate-rpm
+
+      - name: Build .deb and .rpm
+        run: |
+          # --no-build reuses the zigbuild output; rebuilding here would lose the
+          # glibc floor. --no-strip because the host strip cannot handle aarch64.
+          cargo deb --no-build --no-strip --target "${{ matrix.target }}" --output dist/
+          cargo generate-rpm --target "${{ matrix.target }}" --output dist/
+
+      - name: Inspect the packages
+        run: |
+          for f in dist/*.deb; do
+            echo "=== $f"
+            dpkg-deb -I "$f" | sed -n 's/^ //p' | grep -E '^(Package|Version|Architecture|Depends):' || true
+            dpkg-deb -c "$f" | awk '{print "   ", $6, $3}'
+          done
+          for f in dist/*.rpm; do
+            echo "=== $f"
+            ls -lh "$f" | awk '{print "    size:", $5}'
+          done
+
       - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.target }}
@@ -92,7 +116,10 @@ jobs:
       - name: Checksums
         run: |
           cd dist
-          sha256sum *.tar.gz > SHA256SUMS
+          # Listed via find rather than a glob, so adding a package format later
+          # cannot silently drop it from the manifest.
+          find . -maxdepth 1 -type f -printf '%f\n' | sort | xargs sha256sum > /tmp/SHA256SUMS
+          mv /tmp/SHA256SUMS .
           cat SHA256SUMS
 
       - name: Publish
@@ -102,4 +129,4 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" \
             --title "${GITHUB_REF_NAME}" \
             --generate-notes \
-            dist/*.tar.gz dist/SHA256SUMS
+            dist/*
