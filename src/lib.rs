@@ -47,10 +47,11 @@ fn cmd_init(cli: &Cli, force: bool) -> Result<Outcome> {
         .with_context(|| format!("could not write {}", cli.schema.display()))?;
 
     if !cli.quiet {
+        let count = vars.len();
+        let noun = if count == 1 { "variable" } else { "variables" };
         anstream::eprintln!(
-            "wrote {} ({} variables from {})\nreview it, then run `dottyenv check`",
+            "wrote {} ({count} {noun} from {})\nreview it, then run `dottyenv check`",
             cli.schema.display(),
-            vars.len(),
             source.display()
         );
     }
