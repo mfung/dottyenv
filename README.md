@@ -28,6 +28,20 @@ $ dottyenv check
 connection string carries a password, and an error message is the last place it
 should surface. `LOG_LEVEL` is not a secret, so its value is shown.
 
+## Install
+
+```bash
+brew tap mfung/tap
+brew install dottyenv
+```
+
+Works on macOS (Apple Silicon and Intel) and Linux (x86_64 and arm64). Homebrew
+installs a prebuilt binary, so no Rust toolchain is needed.
+
+Or download a tarball from [Releases](https://github.com/mfung/dottyenv/releases)
+and put the binary on your `PATH`. The Linux builds target glibc 2.28, so they run
+on RHEL 8, Ubuntu 20.04, and anything newer.
+
 ## Status
 
 Early. `init`, `check`, and `list` work; `scan` is not implemented yet.
