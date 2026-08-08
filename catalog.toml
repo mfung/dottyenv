@@ -15,6 +15,9 @@
 #           (pk_ is publishable, not secret; whsec_ webhook secrets not covered yet)
 #   GitHub  ghp_ gho_ ghu_ ghs_ ghr_, github_pat_
 #           https://github.blog/changelog/2021-03-31-authentication-token-format-updates-are-generally-available/
+#   AWS     access key ID is 20 chars, AKIA (long-term) or ASIA (STS temporary).
+#           Secret access key is 40 base64 chars with NO prefix, so it gets no
+#           pattern. https://docs.aws.amazon.com/STS/latest/APIReference/API_GetAccessKeyInfo.html
 # The remaining entries are standard URI schemes, not vendor-issued formats.
 #
 # `prefixes` matches against an observed VALUE. `name_matches` is the fallback for
@@ -64,11 +67,57 @@ source = "https://dashboard.stripe.com/apikeys"
 secret = true
 
 [[providers]]
+name = "Stripe webhook signing secret"
+prefixes = ["whsec_"]
+name_matches = ["STRIPE_WEBHOOK_SECRET", "STRIPE_WEBHOOK_SIGNING_SECRET"]
+pattern = '^whsec_'
+source = "https://dashboard.stripe.com/webhooks"
+secret = true
+
+# Publishable keys are designed to be shipped to browsers, so secret = false.
+# Redacting one would hide a value the user needs to see to debug it.
+[[providers]]
+name = "Stripe publishable key"
+prefixes = ["pk_test_", "pk_live_"]
+name_matches = [
+    "STRIPE_PUBLISHABLE_KEY",
+    "STRIPE_PUBLIC_KEY",
+    "*_STRIPE_PUBLISHABLE_KEY",
+]
+pattern = '^pk_(test|live)_'
+source = "https://dashboard.stripe.com/apikeys"
+secret = false
+
+[[providers]]
 name = "GitHub token"
 prefixes = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"]
 name_matches = ["GITHUB_TOKEN", "GH_TOKEN"]
 pattern = "^(gh[pousr]_|github_pat_)"
 source = "https://github.com/settings/tokens"
+secret = true
+
+[[providers]]
+name = "AWS access key ID"
+prefixes = ["AKIA", "ASIA"]
+name_matches = ["AWS_ACCESS_KEY_ID"]
+pattern = '^(AKIA|ASIA)'
+source = "https://console.aws.amazon.com/iam/home#/security_credentials"
+secret = true
+
+# Deliberately no pattern. An AWS secret access key is 40 base64 characters with
+# no prefix, so the only pattern that would match it is an end-anchored length
+# check, and rule 1 above forbids that. Matching on name alone still supplies the
+# source URL and the secret flag, which is where most of the value is.
+[[providers]]
+name = "AWS secret access key"
+name_matches = ["AWS_SECRET_ACCESS_KEY"]
+source = "https://console.aws.amazon.com/iam/home#/security_credentials"
+secret = true
+
+# Also unpatternable: session tokens are long and carry no stable prefix.
+[[providers]]
+name = "AWS session token"
+name_matches = ["AWS_SESSION_TOKEN", "AWS_SECURITY_TOKEN"]
 secret = true
 
 [[providers]]

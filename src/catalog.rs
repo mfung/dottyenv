@@ -177,6 +177,66 @@ mod tests {
     }
 
     #[test]
+    fn distinguishes_the_three_stripe_credential_types() {
+        let catalog = Catalog::load().unwrap();
+        for (value, expected, secret) in [
+            ("sk_test_abc123", "Stripe secret key", true),
+            ("rk_live_abc123", "Stripe secret key", true),
+            ("whsec_abc123", "Stripe webhook signing secret", true),
+            ("pk_test_abc123", "Stripe publishable key", false),
+        ] {
+            let provider = catalog
+                .find("SOME_VAR", value)
+                .unwrap_or_else(|| panic!("no provider matched {value}"));
+            assert_eq!(provider.name, expected, "for {value}");
+            assert_eq!(provider.secret, secret, "secrecy wrong for {value}");
+        }
+    }
+
+    /// A publishable key is meant to ship to browsers. Redacting it would hide a
+    /// value the user needs to see in order to fix it.
+    #[test]
+    fn publishable_key_is_not_treated_as_secret() {
+        let catalog = Catalog::load().unwrap();
+        let provider = catalog.find("STRIPE_PUBLISHABLE_KEY", "").unwrap();
+        assert!(!provider.secret);
+    }
+
+    #[test]
+    fn matches_aws_access_key_ids_by_prefix() {
+        let catalog = Catalog::load().unwrap();
+        for value in ["AKIAIOSFODNN7EXAMPLE", "ASIAIOSFODNN7EXAMPLE"] {
+            let provider = catalog.find("AWS_ACCESS_KEY_ID", value).unwrap();
+            assert_eq!(provider.name, "AWS access key ID");
+            assert!(provider.secret);
+        }
+    }
+
+    /// An AWS secret access key has no prefix, so it is matched by name only and
+    /// carries no pattern. Anything else would need an end anchor.
+    #[test]
+    fn aws_secret_access_key_is_named_but_unpatterned() {
+        let catalog = Catalog::load().unwrap();
+        let provider = catalog
+            .find("AWS_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+            .unwrap();
+
+        assert_eq!(provider.name, "AWS secret access key");
+        assert!(provider.pattern.is_none(), "must stay unpatterned");
+        assert!(provider.secret);
+        assert!(provider.source.is_some(), "source is the remaining value");
+    }
+
+    /// With no pattern there is nothing to contradict, so a name match must hold
+    /// whatever the value looks like.
+    #[test]
+    fn unpatterned_provider_matches_any_value() {
+        let catalog = Catalog::load().unwrap();
+        assert!(catalog.find("AWS_SESSION_TOKEN", "anything at all").is_some());
+        assert!(catalog.find("AWS_SESSION_TOKEN", "").is_some());
+    }
+
+    #[test]
     fn returns_none_for_unknown_vars() {
         let catalog = Catalog::load().unwrap();
         assert!(catalog.find("MY_APP_SETTING", "42").is_none());
