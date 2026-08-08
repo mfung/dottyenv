@@ -39,7 +39,9 @@ pub fn load(path: &Path) -> Result<BTreeMap<String, String>> {
 
 fn unquote(value: &str) -> &str {
     let bytes = value.as_bytes();
-    if bytes.len() >= 2 && (bytes[0] == b'"' || bytes[0] == b'\'') && bytes[0] == bytes[bytes.len() - 1]
+    if bytes.len() >= 2
+        && (bytes[0] == b'"' || bytes[0] == b'\'')
+        && bytes[0] == bytes[bytes.len() - 1]
     {
         &value[1..value.len() - 1]
     } else {

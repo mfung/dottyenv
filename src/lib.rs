@@ -83,7 +83,10 @@ fn cmd_check(cli: &Cli) -> Result<Outcome> {
         // Data to stdout, so the tool composes in pipes.
         anstream::println!("{}", serde_json::to_string_pretty(&report)?);
     } else if !cli.quiet {
-        anstream::print!("{}", check::render(&report, &cli.file.display().to_string()));
+        anstream::print!(
+            "{}",
+            check::render(&report, &cli.file.display().to_string())
+        );
     }
 
     Ok(if report.is_ok() {
@@ -105,7 +108,11 @@ fn cmd_list(cli: &Cli) -> Result<Outcome> {
         } else {
             "unset"
         };
-        let required = if spec.required { "required" } else { "optional" };
+        let required = if spec.required {
+            "required"
+        } else {
+            "optional"
+        };
         anstream::println!("{name:<32} {status:<8} {required}");
     }
 

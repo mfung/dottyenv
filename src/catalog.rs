@@ -163,7 +163,9 @@ mod tests {
     #[test]
     fn name_match_is_discarded_when_the_value_contradicts_it() {
         let catalog = Catalog::load().unwrap();
-        let provider = catalog.find("POSTGRES_URL", "mysql://localhost/app").unwrap();
+        let provider = catalog
+            .find("POSTGRES_URL", "mysql://localhost/app")
+            .unwrap();
         assert_eq!(provider.name, "MySQL/MariaDB connection string");
     }
 
@@ -218,7 +220,10 @@ mod tests {
     fn aws_secret_access_key_is_named_but_unpatterned() {
         let catalog = Catalog::load().unwrap();
         let provider = catalog
-            .find("AWS_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+            .find(
+                "AWS_SECRET_ACCESS_KEY",
+                "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+            )
             .unwrap();
 
         assert_eq!(provider.name, "AWS secret access key");
@@ -232,7 +237,9 @@ mod tests {
     #[test]
     fn unpatterned_provider_matches_any_value() {
         let catalog = Catalog::load().unwrap();
-        assert!(catalog.find("AWS_SESSION_TOKEN", "anything at all").is_some());
+        assert!(catalog
+            .find("AWS_SESSION_TOKEN", "anything at all")
+            .is_some());
         assert!(catalog.find("AWS_SESSION_TOKEN", "").is_some());
     }
 

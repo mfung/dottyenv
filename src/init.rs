@@ -79,15 +79,21 @@ fn infer(name: &str, value: &str, catalog: &Catalog) -> Inferred {
 
 /// Names are a reliable signal for secrecy even when the value tells us nothing.
 fn looks_secret(name: &str) -> bool {
-    const MARKERS: [&str; 6] = ["SECRET", "TOKEN", "PASSWORD", "PRIVATE", "_KEY", "CREDENTIAL"];
+    const MARKERS: [&str; 6] = [
+        "SECRET",
+        "TOKEN",
+        "PASSWORD",
+        "PRIVATE",
+        "_KEY",
+        "CREDENTIAL",
+    ];
     let upper = name.to_uppercase();
     MARKERS.iter().any(|m| upper.contains(m))
 }
 
 fn url_scheme(value: &str) -> Option<String> {
     let re = Regex::new(r"^([a-z][a-z0-9+.\-]*)://").expect("static regex");
-    re.captures(value)
-        .map(|caps| regex::escape(&caps[1]))
+    re.captures(value).map(|caps| regex::escape(&caps[1]))
 }
 
 fn is_bool(value: &str) -> bool {

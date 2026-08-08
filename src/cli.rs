@@ -2,7 +2,11 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
-#[command(name = "dottyenv", version, about = "Validate .env files against a declared schema")]
+#[command(
+    name = "dottyenv",
+    version,
+    about = "Validate .env files against a declared schema"
+)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,

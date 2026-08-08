@@ -109,7 +109,10 @@ fn errors_go_to_stderr_leaving_stdout_clean() {
 #[test]
 fn quiet_suppresses_output_but_keeps_the_exit_code() {
     let dir = project("DATABASE_URL=mysql://localhost/app\nPORT=8080\n");
-    let assert = dottyenv(dir.path()).args(["check", "--quiet"]).assert().code(1);
+    let assert = dottyenv(dir.path())
+        .args(["check", "--quiet"])
+        .assert()
+        .code(1);
     assert!(assert.get_output().stdout.is_empty());
 }
 
@@ -137,7 +140,10 @@ fn init_never_writes_a_secret_into_the_schema() {
     dottyenv(dir.path()).arg("init").assert().code(0);
 
     let schema = std::fs::read_to_string(dir.path().join("dottyenv.toml")).unwrap();
-    assert!(!schema.contains("changeme"), "secret leaked into schema:\n{schema}");
+    assert!(
+        !schema.contains("changeme"),
+        "secret leaked into schema:\n{schema}"
+    );
 }
 
 // -------------------------------------------------------------------- init
@@ -178,10 +184,16 @@ fn init_refuses_to_overwrite_without_force() {
 #[test]
 fn init_force_overwrites() {
     let dir = project("PORT=8080\n");
-    dottyenv(dir.path()).args(["init", "--force"]).assert().code(0);
+    dottyenv(dir.path())
+        .args(["init", "--force"])
+        .assert()
+        .code(0);
 
     let schema = std::fs::read_to_string(dir.path().join("dottyenv.toml")).unwrap();
-    assert!(!schema.contains("DATABASE_URL"), "should reflect the new .env");
+    assert!(
+        !schema.contains("DATABASE_URL"),
+        "should reflect the new .env"
+    );
     assert!(schema.contains("PORT"));
 }
 
@@ -197,7 +209,10 @@ fn init_falls_back_to_env_example() {
         .stderr(predicates::str::contains(".env.example"));
 
     let schema = std::fs::read_to_string(dir.path().join("dottyenv.toml")).unwrap();
-    assert!(schema.contains("dashboard.stripe.com"), "catalog source missing");
+    assert!(
+        schema.contains("dashboard.stripe.com"),
+        "catalog source missing"
+    );
 }
 
 #[test]
@@ -248,9 +263,7 @@ fn scan_is_still_a_stub() {
 /// TTY, so the snapshot is plain text.
 #[test]
 fn check_report_format() {
-    let dir = project(
-        "DATABASE_URL=mysql://user:hunter2@db.internal/prod\nLOG_LEVEL=verbose\n",
-    );
+    let dir = project("DATABASE_URL=mysql://user:hunter2@db.internal/prod\nLOG_LEVEL=verbose\n");
     let assert = dottyenv(dir.path()).arg("check").assert().code(1);
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
 

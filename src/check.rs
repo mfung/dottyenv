@@ -132,9 +132,7 @@ pub fn render(report: &Report, env_path: &str) -> String {
     let mut out = String::new();
     let n = report.findings.len();
     let plural = if n == 1 { "problem" } else { "problems" };
-    out.push_str(&format!(
-        "{red}✗{red:#} {n} {plural} in {env_path}\n\n"
-    ));
+    out.push_str(&format!("{red}✗{red:#} {n} {plural} in {env_path}\n\n"));
 
     for finding in &report.findings {
         let label = match &finding.problem {
