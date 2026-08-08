@@ -8,17 +8,25 @@ fails at startup with an actionable message instead of at runtime with a stack t
 
 ```
 $ dottyenv check
-✗ 2 problems in .env
-
-  MISSING   STRIPE_SECRET_KEY
-            Server-side Stripe key. Use sk_test_ locally.
-            → https://dashboard.stripe.com/apikeys
+✗ 3 problems in .env
 
   INVALID   DATABASE_URL
-            expected ^postgres(ql)?://, got "mysql://localhost/app"
+            expected ^postgres(ql)?://, got "<redacted, 47 chars>"
+            PostgreSQL connection string
 
-  8 of 10 required variables OK
+  INVALID   LOG_LEVEL
+            expected one of debug, info, warn, error, got "verbose"
+
+  MISSING   STRIPE_SECRET_KEY
+            Stripe secret key. Use sk_test_ locally.
+            → https://dashboard.stripe.com/apikeys
+
+  4 of 6 required variables OK
 ```
+
+`DATABASE_URL` is marked `secret`, so its value is reported by length only. A
+connection string carries a password, and an error message is the last place it
+should surface. `LOG_LEVEL` is not a secret, so its value is shown.
 
 ## Status
 
@@ -44,7 +52,8 @@ no pattern.
 [vars.DATABASE_URL]
 required    = true
 pattern     = "^postgres(ql)?://"
-description = "Primary Postgres connection string"
+description = "PostgreSQL connection string"
+secret      = true
 
 [vars.LOG_LEVEL]
 required = false
