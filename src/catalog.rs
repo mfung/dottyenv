@@ -46,7 +46,7 @@ impl Catalog {
         toml::from_str(CATALOG_TOML).context("built-in catalog is malformed")
     }
 
-    /// Match on the value first — an observed value is stronger evidence than a name.
+    /// Match on the value first: an observed value is stronger evidence than a name.
     ///
     /// A name-based match is discarded when the observed value contradicts it. Without
     /// this, `DATABASE_URL=mysql://...` matches the Postgres entry on name alone and

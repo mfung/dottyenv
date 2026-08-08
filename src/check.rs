@@ -145,7 +145,7 @@ pub fn render(report: &Report, env_path: &str) -> String {
         ));
 
         if let Problem::Invalid { reason, got } = &finding.problem {
-            out.push_str(&format!("            {dim}{reason} — got {got:?}{dim:#}\n"));
+            out.push_str(&format!("            {dim}{reason}, got {got:?}{dim:#}\n"));
         }
         if let Some(description) = &finding.description {
             out.push_str(&format!("            {dim}{description}{dim:#}\n"));

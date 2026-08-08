@@ -3,7 +3,7 @@
 Validate `.env` files against a declared schema.
 
 `.env.example` is untyped text. `dottyenv.toml` says which variables are required,
-what they should look like, and **where to go get them** — so a missing variable
+what they should look like, and **where to go get them**, so a missing variable
 fails at startup with an actionable message instead of at runtime with a stack trace.
 
 ```
@@ -15,7 +15,7 @@ $ dottyenv check
             → https://dashboard.stripe.com/apikeys
 
   INVALID   DATABASE_URL
-            expected ^postgres(ql)?:// — got "mysql://localhost/app"
+            expected ^postgres(ql)?://, got "mysql://localhost/app"
 
   8 of 10 required variables OK
 ```
@@ -35,7 +35,7 @@ dottyenv check     # validate .env against it
 ```
 
 Review the generated file before committing it. Anything `init` could not infer is
-left as a `# TODO` comment rather than guessed at — a wrong pattern is worse than
+left as a `# TODO` comment rather than guessed at. A wrong pattern is worse than
 no pattern.
 
 ## Schema
@@ -52,7 +52,7 @@ default  = "info"
 one_of   = ["debug", "info", "warn", "error"]
 ```
 
-Commit `dottyenv.toml`. It holds no secrets — only their shape.
+Commit `dottyenv.toml`. It holds no secrets, only their shape.
 
 ## Exit codes
 

@@ -21,7 +21,7 @@ pub fn run(cli: Cli) -> Result<Outcome> {
         Command::Check => cmd_check(&cli),
         Command::List => cmd_list(&cli),
         Command::Init { force } => cmd_init(&cli, force),
-        Command::Scan => bail!("`scan` is not implemented yet — see PRD §9, v0.2"),
+        Command::Scan => bail!("`scan` is not implemented yet. See PRD §9, v0.2"),
     }
 }
 
@@ -48,7 +48,7 @@ fn cmd_init(cli: &Cli, force: bool) -> Result<Outcome> {
 
     if !cli.quiet {
         anstream::eprintln!(
-            "wrote {} — {} variables from {}\nreview it, then run `dottyenv check`",
+            "wrote {} ({} variables from {})\nreview it, then run `dottyenv check`",
             cli.schema.display(),
             vars.len(),
             source.display()
@@ -58,8 +58,8 @@ fn cmd_init(cli: &Cli, force: bool) -> Result<Outcome> {
     Ok(Outcome::Success)
 }
 
-/// Fall back to .env.example only when the user did not name a file explicitly —
-/// a repo often has the example committed but no .env yet.
+/// Fall back to .env.example only when the user did not name a file explicitly.
+/// A repo often has the example committed but no .env yet.
 fn resolve_source(file: &Path) -> Result<PathBuf> {
     if file.exists() {
         return Ok(file.to_path_buf());

@@ -1,4 +1,4 @@
-# Provider catalog — see PRD §7.
+# Provider catalog. See PRD §7.
 #
 # Used by `dottyenv init` to infer `pattern` and `source` for known providers.
 # Compiled into the binary via include_str!, so there are no network calls.
@@ -16,7 +16,7 @@
 catalog_version = 1
 
 # NOTE: DATABASE_URL is deliberately absent from every `name_matches` below.
-# The name does not pin a format — it may hold postgres://, mysql://, mongodb://,
+# The name does not pin a format. It may hold postgres://, mysql://, mongodb://,
 # sqlite:///path, Prisma's file:./dev.db, or a bare filesystem path. Guessing from
 # the name alone produced a schema that rejected the .env it was generated from.
 # Databases are identified by observed value only.
