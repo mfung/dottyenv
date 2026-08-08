@@ -1,0 +1,51 @@
+# Provider catalog — see PRD §7.
+#
+# Used by `dottyenv init` to infer `pattern` and `source` for known providers.
+# NOT yet loaded by any code: `init` is unimplemented, and wiring a loader before
+# there is a consumer would be speculative.
+#
+# RULES FOR ENTRIES (PRD §7.4):
+#   1. Match the PREFIX, never the full format. Vendors change key lengths.
+#      good: "^sk_(test|live)_"
+#      bad:  "^sk_(test|live)_[A-Za-z0-9]{24}$"
+#   2. A false INVALID on a working key destroys trust. When unsure, omit the entry.
+#   3. Verify every prefix against vendor docs before shipping. These are unverified.
+#
+# `prefixes` matches against an observed VALUE. `name_matches` is the fallback for
+# when only a placeholder is present (the common case with .env.example).
+
+catalog_version = 1
+
+[[providers]]
+id = "postgres_url"
+name = "PostgreSQL connection string"
+prefixes = ["postgres://", "postgresql://"]
+name_matches = ["DATABASE_URL", "*_DATABASE_URL", "POSTGRES_URL"]
+pattern = "^postgres(ql)?://"
+secret = true
+
+[[providers]]
+id = "stripe_secret_key"
+name = "Stripe secret key"
+prefixes = ["sk_test_", "sk_live_", "rk_test_", "rk_live_"]
+name_matches = ["STRIPE_SECRET_KEY", "STRIPE_API_KEY"]
+pattern = "^(sk|rk)_(test|live)_"
+source = "https://dashboard.stripe.com/apikeys"
+secret = true
+
+[[providers]]
+id = "github_token"
+name = "GitHub token"
+prefixes = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"]
+name_matches = ["GITHUB_TOKEN", "GH_TOKEN"]
+pattern = "^(gh[pousr]_|github_pat_)"
+source = "https://github.com/settings/tokens"
+secret = true
+
+[[providers]]
+id = "redis_url"
+name = "Redis connection string"
+prefixes = ["redis://", "rediss://"]
+name_matches = ["REDIS_URL"]
+pattern = "^rediss?://"
+secret = true
