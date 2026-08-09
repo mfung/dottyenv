@@ -30,17 +30,36 @@ should surface. `LOG_LEVEL` is not a secret, so its value is shown.
 
 ## Install
 
+Every path below installs a prebuilt binary. No Rust toolchain required.
+
+**Homebrew** (macOS and Linux):
+
 ```bash
 brew tap mfung/tap
 brew install dottyenv
 ```
 
-Works on macOS (Apple Silicon and Intel) and Linux (x86_64 and arm64). Homebrew
-installs a prebuilt binary, so no Rust toolchain is needed.
+**Debian / Ubuntu:**
 
-Or download a tarball from [Releases](https://github.com/mfung/dottyenv/releases)
-and put the binary on your `PATH`. The Linux builds target glibc 2.28, so they run
-on RHEL 8, Ubuntu 20.04, and anything newer.
+```bash
+curl -LO https://github.com/mfung/dottyenv/releases/latest/download/dottyenv_0.1.1-1_amd64.deb
+sudo dpkg -i dottyenv_0.1.1-1_amd64.deb
+```
+
+**RHEL / Fedora / Rocky:**
+
+```bash
+sudo rpm -i https://github.com/mfung/dottyenv/releases/latest/download/dottyenv-0.1.1-1.x86_64.rpm
+```
+
+Substitute `arm64` / `aarch64` in those filenames on ARM machines, and check
+[Releases](https://github.com/mfung/dottyenv/releases) for the current version.
+
+**Tarball:** download from Releases and put the binary on your `PATH`.
+
+Linux artifacts are built against a glibc 2.28 floor, verified in CI by reading the
+finished binary's dynamic symbols, so they run on RHEL 8, Ubuntu 20.04, and newer.
+Every release ships a `SHA256SUMS`.
 
 ## Status
 
