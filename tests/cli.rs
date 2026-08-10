@@ -248,13 +248,92 @@ fn list_reports_status_per_variable() {
 // ---------------------------------------------------------------- stubs
 
 #[test]
-fn scan_is_still_a_stub() {
+fn scan_finds_a_variable_the_code_reads_but_the_schema_omits() {
+    let dir = project("PORT=8080\n");
+    write(
+        dir.path(),
+        "app.js",
+        "const k = process.env.SENDGRID_API_KEY;\n",
+    );
+
+    dottyenv(dir.path())
+        .arg("scan")
+        .assert()
+        .code(0) // advisory, never a gate
+        .stdout(predicates::str::contains("used but not declared"))
+        .stdout(predicates::str::contains("SENDGRID_API_KEY"))
+        .stdout(predicates::str::contains("app.js:1"));
+}
+
+#[test]
+fn scan_finds_a_declared_variable_no_code_mentions() {
+    let dir = project("PORT=8080\n");
+    write(dir.path(), "app.py", "import os\nos.getenv('PORT')\n");
+
+    let assert = dottyenv(dir.path()).arg("scan").assert().code(0);
+    let out = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+
+    assert!(out.contains("declared but never mentioned"), "{out}");
+    assert!(out.contains("DATABASE_URL"), "{out}");
+    // PORT is read by app.py, so it must not be listed as unused.
+    let unused = out.split("declared but never mentioned").nth(1).unwrap();
+    assert!(!unused.contains("PORT"), "{out}");
+}
+
+/// The schema names every variable by definition. Counting it as usage would
+/// make the unmentioned list permanently empty.
+#[test]
+fn scan_does_not_treat_the_schema_itself_as_usage() {
     let dir = project("PORT=8080\n");
     dottyenv(dir.path())
         .arg("scan")
         .assert()
-        .code(3)
-        .stderr(predicates::str::contains("not implemented"));
+        .stdout(predicates::str::contains("DATABASE_URL"));
+}
+
+#[test]
+fn scan_respects_gitignore() {
+    let dir = project("PORT=8080\n");
+    write(dir.path(), ".gitignore", "vendor/\n");
+    std::fs::create_dir(dir.path().join("vendor")).unwrap();
+    write(
+        &dir.path().join("vendor"),
+        "dep.js",
+        "process.env.VENDORED_ONLY_KEY\n",
+    );
+
+    let assert = dottyenv(dir.path()).arg("scan").assert().code(0);
+    let out = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    assert!(
+        !out.contains("VENDORED_ONLY_KEY"),
+        "scanned an ignored dir: {out}"
+    );
+}
+
+#[test]
+fn scan_warns_about_dynamic_access() {
+    let dir = project("PORT=8080\n");
+    write(dir.path(), "app.js", "const v = process.env[userKey];\n");
+
+    dottyenv(dir.path())
+        .arg("scan")
+        .assert()
+        .code(0)
+        .stdout(predicates::str::contains("dynamically"));
+}
+
+#[test]
+fn scan_json_is_parseable() {
+    let dir = project("PORT=8080\n");
+    write(dir.path(), "app.js", "process.env.EXTRA_KEY\n");
+
+    let assert = dottyenv(dir.path())
+        .args(["scan", "--json"])
+        .assert()
+        .code(0);
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&assert.get_output().stdout).expect("valid JSON");
+    assert!(parsed["undeclared"]["EXTRA_KEY"].is_object());
 }
 
 // --------------------------------------------------------------- rendering

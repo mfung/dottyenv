@@ -3,6 +3,7 @@ pub mod check;
 pub mod cli;
 pub mod envfile;
 pub mod init;
+pub mod scan;
 pub mod schema;
 
 use anyhow::{bail, Context, Result};
@@ -21,7 +22,7 @@ pub fn run(cli: Cli) -> Result<Outcome> {
         Command::Check => cmd_check(&cli),
         Command::List => cmd_list(&cli),
         Command::Init { force } => cmd_init(&cli, force),
-        Command::Scan => bail!("`scan` is not implemented yet. See PRD §9, v0.2"),
+        Command::Scan => cmd_scan(&cli),
     }
 }
 
@@ -94,6 +95,21 @@ fn cmd_check(cli: &Cli) -> Result<Outcome> {
     } else {
         Outcome::Failure
     })
+}
+
+fn cmd_scan(cli: &Cli) -> Result<Outcome> {
+    let schema = schema::Schema::load(&cli.schema)?;
+    let report = scan::scan(Path::new("."), &schema, &[&cli.schema])?;
+
+    if cli.json {
+        anstream::println!("{}", serde_json::to_string_pretty(&report)?);
+    } else if !cli.quiet {
+        anstream::print!("{}", scan::render(&report));
+    }
+
+    // Always succeeds. Discovery is heuristic, so `scan` is advisory and must
+    // never become a CI gate. See PRD §9.
+    Ok(Outcome::Success)
 }
 
 fn cmd_list(cli: &Cli) -> Result<Outcome> {

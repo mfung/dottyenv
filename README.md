@@ -63,7 +63,28 @@ Every release ships a `SHA256SUMS`.
 
 ## Status
 
-Early. `init`, `check`, and `list` work; `scan` is not implemented yet.
+Early, but `init`, `check`, `list`, and `scan` all work.
+
+`scan` cross-references your schema against the code:
+
+```
+$ dottyenv scan
+used but not declared
+  SENDGRID_API_KEY                 src/server.ts:2
+  SESSION_SECRET                   app.rb:1
+
+declared but never mentioned
+  LEGACY_UNUSED_FLAG
+
+note: 1 file accesses the environment dynamically, so this list may be
+      incomplete: src/server.ts
+```
+
+It knows no languages. Checking whether a declared variable is used is a literal
+search, so it works anywhere, including Dockerfiles and CI config. Finding
+undeclared ones uses a single pattern that keys off the substring `env`, which
+every language's syntax contains. `scan` always exits 0; it is advisory, and
+`check` is the gate.
 
 ## Getting started
 
