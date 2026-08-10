@@ -243,7 +243,7 @@ mod tests {
             ("MYSTERY", "8f3a9c2e1b4d7f60"),
         ]);
         let schema: Schema = toml::from_str(&generate(&vars, &catalog())).unwrap();
-        let report = crate::check::check(&schema, &vars);
+        let report = crate::check::check(&schema.resolve(None), &vars);
         assert!(
             report.is_ok(),
             "init produced a schema its own input fails: {:?}",

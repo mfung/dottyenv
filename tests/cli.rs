@@ -336,6 +336,127 @@ fn scan_json_is_parseable() {
     assert!(parsed["undeclared"]["EXTRA_KEY"].is_object());
 }
 
+// ------------------------------------------------------- environments
+
+const MULTI_ENV: &str = r#"
+[vars.DATABASE_URL]
+required = true
+
+[envs.development.vars.DATABASE_URL]
+pattern = '^(sqlite:|file:)'
+
+[envs.production.vars.DATABASE_URL]
+pattern = '^postgres(ql)?://'
+"#;
+
+fn multi_env_project() -> TempDir {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "dottyenv.toml", MULTI_ENV);
+    write(
+        dir.path(),
+        ".env.development",
+        "DATABASE_URL=sqlite:///dev.db\n",
+    );
+    write(
+        dir.path(),
+        ".env.production",
+        "DATABASE_URL=postgres://db/app\n",
+    );
+    dir
+}
+
+/// The case this feature exists for: SQLite locally, Postgres in production.
+/// One schema, and each file passes under its own environment.
+#[test]
+fn each_environment_accepts_its_own_database() {
+    let dir = multi_env_project();
+    for file in [".env.development", ".env.production"] {
+        dottyenv(dir.path())
+            .args(["check", "--file", file])
+            .assert()
+            .code(0);
+    }
+}
+
+#[test]
+fn sqlite_in_production_is_rejected() {
+    let dir = multi_env_project();
+    write(
+        dir.path(),
+        ".env.production",
+        "DATABASE_URL=sqlite:///oops.db\n",
+    );
+
+    dottyenv(dir.path())
+        .args(["check", "--file", ".env.production"])
+        .assert()
+        .code(1)
+        .stdout(predicates::str::contains("^postgres(ql)?://"));
+}
+
+#[test]
+fn the_applied_environment_is_named_in_the_output() {
+    let dir = multi_env_project();
+    dottyenv(dir.path())
+        .args(["check", "--file", ".env.production"])
+        .assert()
+        .code(0)
+        .stdout(predicates::str::contains("[production]"));
+}
+
+#[test]
+fn env_flag_overrides_the_inferred_name() {
+    let dir = multi_env_project();
+    // A production file checked against development rules passes, since
+    // postgres:// is only rejected by nothing in the development overlay.
+    dottyenv(dir.path())
+        .args(["check", "--file", ".env.production", "--env", "development"])
+        .assert()
+        .code(1)
+        .stdout(predicates::str::contains("sqlite"));
+}
+
+#[test]
+fn a_misspelled_environment_is_a_config_error() {
+    let dir = multi_env_project();
+    dottyenv(dir.path())
+        .args(["check", "--env", "prodcution"])
+        .assert()
+        .code(3)
+        .stderr(predicates::str::contains("prodcution"))
+        .stderr(predicates::str::contains("production"));
+}
+
+/// .env.local is a common filename that names no environment, so it must fall
+/// back to the base schema rather than erroring.
+#[test]
+fn an_unrecognised_filename_falls_back_to_the_base_schema() {
+    let dir = multi_env_project();
+    write(dir.path(), ".env.local", "DATABASE_URL=anything-at-all\n");
+
+    dottyenv(dir.path())
+        .args(["check", "--file", ".env.local"])
+        .assert()
+        .code(0);
+}
+
+#[test]
+fn an_overlay_naming_an_undeclared_variable_exits_3() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "dottyenv.toml",
+        "[vars.FOO]\nrequired = true\n\n[envs.dev.vars.TYPOD]\nrequired = true\n",
+    );
+    write(dir.path(), ".env", "FOO=1\n");
+
+    dottyenv(dir.path())
+        .arg("check")
+        .assert()
+        .code(3)
+        .stderr(predicates::str::contains("TYPOD"));
+}
+
 // ------------------------------------------------------------ completions
 
 #[test]

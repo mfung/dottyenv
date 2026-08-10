@@ -82,17 +82,21 @@ fn resolve_source(file: &Path) -> Result<PathBuf> {
 
 fn cmd_check(cli: &Cli) -> Result<Outcome> {
     let schema = schema::Schema::load(&cli.schema)?;
+    let env = schema.select_env(cli.env.as_deref(), &cli.file)?;
+    let specs = schema.resolve(env.as_deref());
     let vars = envfile::load(&cli.file)?;
-    let report = check::check(&schema, &vars);
+    let report = check::check(&specs, &vars);
 
     if cli.json {
         // Data to stdout, so the tool composes in pipes.
         anstream::println!("{}", serde_json::to_string_pretty(&report)?);
     } else if !cli.quiet {
-        anstream::print!(
-            "{}",
-            check::render(&report, &cli.file.display().to_string())
-        );
+        // Naming the applied overlay makes it visible that a stricter gate ran.
+        let target = match &env {
+            Some(name) => format!("{} [{name}]", cli.file.display()),
+            None => cli.file.display().to_string(),
+        };
+        anstream::print!("{}", check::render(&report, &target));
     }
 
     Ok(if report.is_ok() {
@@ -119,9 +123,11 @@ fn cmd_scan(cli: &Cli) -> Result<Outcome> {
 
 fn cmd_list(cli: &Cli) -> Result<Outcome> {
     let schema = schema::Schema::load(&cli.schema)?;
+    let env = schema.select_env(cli.env.as_deref(), &cli.file)?;
+    let specs = schema.resolve(env.as_deref());
     let vars = envfile::load(&cli.file)?;
 
-    for (name, spec) in &schema.vars {
+    for (name, spec) in &specs {
         let status = if vars.get(name).is_some_and(|v| !v.is_empty()) {
             "set"
         } else if spec.required {

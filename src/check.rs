@@ -1,4 +1,4 @@
-use crate::schema::{Schema, VarSpec};
+use crate::schema::VarSpec;
 use anstyle::{AnsiColor, Style};
 use regex::Regex;
 use serde::Serialize;
@@ -33,12 +33,14 @@ impl Report {
     }
 }
 
-pub fn check(schema: &Schema, vars: &BTreeMap<String, String>) -> Report {
+/// Takes resolved specs rather than the Schema, since the caller has already
+/// applied any per-environment overlay (PRD §8).
+pub fn check(specs: &BTreeMap<String, VarSpec>, vars: &BTreeMap<String, String>) -> Report {
     let mut findings = Vec::new();
     let mut required_total = 0;
     let mut required_ok = 0;
 
-    for (name, spec) in &schema.vars {
+    for (name, spec) in specs {
         if spec.required {
             required_total += 1;
         }
@@ -167,8 +169,9 @@ pub fn render(report: &Report, env_path: &str) -> String {
 mod tests {
     use super::*;
 
-    fn schema_from(toml_str: &str) -> Schema {
-        toml::from_str(toml_str).unwrap()
+    fn schema_from(toml_str: &str) -> BTreeMap<String, VarSpec> {
+        let schema: crate::schema::Schema = toml::from_str(toml_str).unwrap();
+        schema.resolve(None)
     }
 
     fn env_from(pairs: &[(&str, &str)]) -> BTreeMap<String, String> {

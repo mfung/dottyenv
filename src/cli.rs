@@ -19,6 +19,10 @@ pub struct Cli {
     #[arg(short, long, global = true, default_value = "dottyenv.toml")]
     pub schema: PathBuf,
 
+    /// Environment overlay to apply (default: inferred from --file)
+    #[arg(short, long, global = true)]
+    pub env: Option<String>,
+
     /// Emit machine-readable JSON on stdout
     #[arg(long, global = true)]
     pub json: bool,

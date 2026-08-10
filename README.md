@@ -127,6 +127,45 @@ one_of   = ["debug", "info", "warn", "error"]
 
 Commit `dottyenv.toml`. It holds no secrets, only their shape.
 
+## Environments
+
+SQLite locally and Postgres in production is one variable with two different
+shapes. Declare it once and override per environment:
+
+```toml
+[vars.DATABASE_URL]
+required    = true
+description = "Primary database"
+secret      = true
+
+[envs.development.vars.DATABASE_URL]
+pattern = '^(sqlite:|file:)'
+
+[envs.production.vars.DATABASE_URL]
+pattern = '^postgres(ql)?://'
+
+[envs.production.vars.STRIPE_SECRET_KEY]
+required = true
+pattern  = '^sk_live_'
+```
+
+The environment is taken from the filename, so `.env.production` uses the
+`production` overlay. `--env` overrides it:
+
+```bash
+dottyenv check --file .env.production              # infers production
+dottyenv check --file .env.staging --env production # check staging against prod rules
+```
+
+Overlays may override `required`, `pattern`, `one_of` and `default`. They may not
+override `description`, `source` or `secret`, and attempting to is a load error. A
+variable means the same thing everywhere, and a credential is not sensitive in
+production and safe in development.
+
+A misspelled `--env` is an error rather than a silent fallback, since that would
+quietly downgrade a production gate. An unrecognised *filename* does fall back
+quietly, because `.env.local` is a common name that is not an environment.
+
 ## Exit codes
 
 | Code | Meaning |
