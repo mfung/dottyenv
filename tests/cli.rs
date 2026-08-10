@@ -336,6 +336,41 @@ fn scan_json_is_parseable() {
     assert!(parsed["undeclared"]["EXTRA_KEY"].is_object());
 }
 
+// ------------------------------------------------------------ completions
+
+#[test]
+fn completions_generate_for_every_supported_shell() {
+    let dir = project("PORT=8080\n");
+    for shell in ["bash", "zsh", "fish", "powershell", "elvish"] {
+        let assert = dottyenv(dir.path())
+            .args(["completions", shell])
+            .assert()
+            .code(0);
+        let out = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+        assert!(out.contains("dottyenv"), "{shell} script looks empty");
+    }
+}
+
+/// Completions must not need a schema, since they are generated during install
+/// with no project in scope.
+#[test]
+fn completions_work_without_a_schema() {
+    let dir = tempfile::tempdir().unwrap();
+    dottyenv(dir.path())
+        .args(["completions", "bash"])
+        .assert()
+        .code(0);
+}
+
+#[test]
+fn an_unknown_shell_is_a_usage_error() {
+    let dir = project("PORT=8080\n");
+    dottyenv(dir.path())
+        .args(["completions", "klingon"])
+        .assert()
+        .code(2);
+}
+
 // --------------------------------------------------------------- rendering
 
 /// Pins the human-readable report. anstream strips styling when stdout is not a

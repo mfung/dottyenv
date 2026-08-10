@@ -45,4 +45,10 @@ pub enum Command {
 
     /// List declared variables and whether each is set
     List,
+
+    /// Print a shell completion script to stdout
+    Completions {
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
 }

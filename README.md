@@ -61,6 +61,16 @@ Linux artifacts are built against a glibc 2.28 floor, verified in CI by reading 
 finished binary's dynamic symbols, so they run on RHEL 8, Ubuntu 20.04, and newer.
 Every release ships a `SHA256SUMS`.
 
+## Shell completions
+
+```bash
+dottyenv completions zsh  > ~/.zfunc/_dottyenv
+dottyenv completions bash > /etc/bash_completion.d/dottyenv
+dottyenv completions fish > ~/.config/fish/completions/dottyenv.fish
+```
+
+`powershell` and `elvish` are also supported.
+
 ## Status
 
 Early, but `init`, `check`, `list`, and `scan` all work.

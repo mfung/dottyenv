@@ -23,6 +23,11 @@ pub fn run(cli: Cli) -> Result<Outcome> {
         Command::List => cmd_list(&cli),
         Command::Init { force } => cmd_init(&cli, force),
         Command::Scan => cmd_scan(&cli),
+        Command::Completions { shell } => {
+            let mut command = <Cli as clap::CommandFactory>::command();
+            clap_complete::generate(shell, &mut command, "dottyenv", &mut std::io::stdout());
+            Ok(Outcome::Success)
+        }
     }
 }
 
