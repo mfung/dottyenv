@@ -140,12 +140,19 @@ jobs:
           printf 'DATABASE_URL=postgres://localhost/app\n' > .env
           dottyenv init --quiet
           dottyenv check
-          test -f /usr/share/doc/dottyenv/README.md
+          printf 'x = process.env.SOME_OTHER_KEY\n' > app.js
+          dottyenv scan
 
           # The exit-code contract must survive packaging.
           rm dottyenv.toml
           dottyenv check && exit 1 || [ $? -eq 3 ]
-          echo "OK on $(cat /etc/os-release | grep PRETTY_NAME)"
+
+          # No filesystem assertion on /usr/share/doc. Official Ubuntu images ship
+          # /etc/dpkg/dpkg.cfg.d/excludes with path-exclude=/usr/share/doc/*, so the
+          # README is stripped at install time. That is the image's policy, not our
+          # package; the "Inspect the packages" step already proves it is in the
+          # archive.
+          echo "OK on $(grep PRETTY_NAME /etc/os-release)"
           SCRIPT
           docker run --rm -e KIND=${{ matrix.kind }} \
             -v "$PWD/dist:/dist:ro" -v "$PWD/run.sh:/run.sh:ro" \
