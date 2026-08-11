@@ -99,8 +99,60 @@ jobs:
           name: dist-${{ matrix.target }}
           path: dist/*
 
+  # Actually install the packages on the distributions we claim to support, so
+  # "runs on RHEL 8" is measured rather than inferred from the glibc floor.
+  install:
+    needs: linux
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:20.04     # oldest Ubuntu we claim, glibc 2.31
+            kind: deb
+          - image: debian:12
+            kind: deb
+          - image: almalinux:8      # RHEL 8 rebuild, glibc 2.28: the real test
+            kind: rpm
+          - image: fedora:latest
+            kind: rpm
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-x86_64-unknown-linux-gnu
+          path: dist
+
+      - name: Install and run on ${{ matrix.image }}
+        run: |
+          cat > run.sh <<'SCRIPT'
+          set -eux
+          if [ "$KIND" = deb ]; then
+            dpkg -i /dist/*_amd64.deb
+          else
+            rpm -i /dist/*.x86_64.rpm
+          fi
+
+          # Prove it runs, not merely that files were copied.
+          dottyenv --version
+          ldd "$(command -v dottyenv)" || true
+
+          cd "$(mktemp -d)"
+          printf 'DATABASE_URL=postgres://localhost/app\n' > .env
+          dottyenv init --quiet
+          dottyenv check
+          test -f /usr/share/doc/dottyenv/README.md
+
+          # The exit-code contract must survive packaging.
+          rm dottyenv.toml
+          dottyenv check && exit 1 || [ $? -eq 3 ]
+          echo "OK on $(cat /etc/os-release | grep PRETTY_NAME)"
+          SCRIPT
+          docker run --rm -e KIND=${{ matrix.kind }} \
+            -v "$PWD/dist:/dist:ro" -v "$PWD/run.sh:/run.sh:ro" \
+            ${{ matrix.image }} bash /run.sh
+
   release:
-    needs: [macos, linux]
+    needs: [macos, linux, install]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
