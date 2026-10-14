@@ -42,14 +42,14 @@ brew install dottyenv
 **Debian / Ubuntu:**
 
 ```bash
-curl -LO https://github.com/mfung/dottyenv/releases/latest/download/dottyenv_0.1.1-1_amd64.deb
-sudo dpkg -i dottyenv_0.1.1-1_amd64.deb
+curl -LO https://github.com/mfung/dottyenv/releases/latest/download/dottyenv_0.2.1-1_amd64.deb
+sudo dpkg -i dottyenv_0.2.1-1_amd64.deb
 ```
 
 **RHEL / Fedora / Rocky:**
 
 ```bash
-sudo rpm -i https://github.com/mfung/dottyenv/releases/latest/download/dottyenv-0.1.1-1.x86_64.rpm
+sudo rpm -i https://github.com/mfung/dottyenv/releases/latest/download/dottyenv-0.2.1-1.x86_64.rpm
 ```
 
 Substitute `arm64` / `aarch64` in those filenames on ARM machines, and check
@@ -179,6 +179,12 @@ quietly, because `.env.local` is a common name that is not an environment.
 
 Not an encryption tool (use SOPS or dotenvx), not a hosted secret store, and not a
 replacement for direnv. It validates; that's all.
+
+## Writing
+
+- [.env.example is untyped text](https://mengfung.com/2026/08/env-example-is-untyped-text/): why this exists and the design rules behind it
+- [Scanning for env vars without a language table](https://mengfung.com/2026/08/scanning-for-env-vars-without-a-language-table/): how `scan` works
+- [Shipping a Rust CLI to Homebrew, Debian and RHEL](https://mengfung.com/2026/08/shipping-a-rust-cli-to-homebrew-debian-and-rhel/): the release pipeline and the glibc floor
 
 ## License
 
